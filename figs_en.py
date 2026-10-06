@@ -1,0 +1,67 @@
+import numpy as np, json, glob, matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
+plt.rcParams.update({'font.size': 9, 'savefig.dpi': 300})
+OUT = '../figures/'
+R = json.load(open('../data/results.json')); rows = R['bkw_rows']; A = np.array([r['a'] for r in rows])
+Dx = np.array([r['D_exact'] for r in rows]); Dq = np.array([r['D_quad'] for r in rows])
+# fig_diss
+fig, ax = plt.subplots(1, 2, figsize=(7.5, 3.0))
+ax[0].semilogy(A, Dx, 'o-', label=r'exact $-\dot E=\lambda\int W r\sinh r$')
+ax[0].semilogy(A, Dq, 's--', label=r'quadratic $\lambda\int W r^2$')
+ax[0].semilogy(A, 1.5*A**4, 'k:', label=r'linear theory $1.5\,\alpha^4$')
+ax[0].semilogy(A, [r['Psi_star'] for r in rows], '^-', ms=3, label=r'$\Psi^*(f,-DE)$')
+ax[0].semilogy(A, [r['Psi'] for r in rows], 'v-', ms=3, label=r'$\Psi(f,\dot f)$')
+ax[0].set_xlabel(r'$\alpha$'); ax[0].legend(fontsize=7)
+ax[1].plot(A, Dx/Dq, 'o-', label=r'$R_D=D_{\rm exact}/D_{\rm quad}$'); ax[1].plot(A, [r['rrms'] for r in rows], 's--', label=r'$r_{\rm rms}$ (weight $W$)')
+ax[1].axhline(1.05, color='gray', lw=0.8, ls=':'); ax[1].set_xlabel(r'$\alpha$'); ax[1].legend(fontsize=8)
+plt.tight_layout(); plt.savefig(OUT+'fig_diss.png'); plt.close()
+# fig_kappa
+kx = np.array(R['kappa_exact']); kq = np.array(R['kappa_quad'])
+plt.figure(figsize=(5, 3.0))
+plt.plot(A[1:], kx[1:], 'o-', label=r'$\kappa_{\rm eff}$ (exact dissipation)'); plt.plot(A[1:], kq[1:], 's--', label=r'$\kappa_{\rm eff}$ (quadratic)')
+plt.axhline(0.25, color='k', ls=':', label=r'linear gap $\gamma_4=1/4$'); plt.xlabel(r'$\alpha$'); plt.ylabel(r'$\kappa_{\rm eff}$'); plt.legend()
+plt.tight_layout(); plt.savefig(OUT+'fig_kappa.png'); plt.close()
+# fig_carleman
+d = np.linspace(1e-3, 0.999, 400); sig = 1.0; r = 2*np.arctanh(d)
+D_ex = 2*sig*d*np.arctanh(d); D_q = 2*sig*(1-d**2)/4*r**2; kap = sig*(1 + d/((1-d**2)*np.arctanh(d)))
+fig, ax = plt.subplots(1, 3, figsize=(10, 3))
+ax[0].semilogy(d, D_ex, label=r'$D_{\rm exact}=2\sigma\delta\,{\rm artanh}\,\delta$'); ax[0].semilogy(d, D_q, '--', label=r'$D_2=2\sigma uv\,r^2$'); ax[0].set_xlabel(r'$\delta=v-u$'); ax[0].legend(fontsize=7)
+ax[1].plot(d, kap/sig); ax[1].axhline(2, color='k', ls=':'); ax[1].set_ylim(1.5, 8); ax[1].set_xlabel(r'$\delta$'); ax[1].set_ylabel(r'$\kappa_{\rm eff}/\sigma$')
+ax[2].plot(d, np.arcsin(d), label=r'$\sqrt{2\sigma}\,d(u,1/2)=\arcsin\delta$'); ax[2].plot(d, D_ex/D_q, '--', label=r'$R_D=\sinh r/r$'); ax[2].set_xlabel(r'$\delta$'); ax[2].legend(fontsize=8)
+plt.tight_layout(); plt.savefig(OUT+'fig_carleman.png'); plt.close()
+# fig_curv
+g4 = np.load('../data/agrid4.npy'); g6 = np.load('../data/agrid6.npy'); Kg = np.load('../data/Kgauss.npy')
+fig, ax = plt.subplots(1, 2, figsize=(7.5, 3.2))
+im = ax[0].pcolormesh(g4[1:-1], g6[1:-1], Kg[1:-1, 1:-1].T, shading='nearest', cmap='RdBu_r', vmin=-8, vmax=8)
+plt.colorbar(im, ax=ax[0], label='Gaussian curvature'); ax[0].set_xlabel('$a_4$'); ax[0].set_ylabel('$a_6$')
+for fn in sorted(glob.glob('../data/geo_+*.npy')):
+    geo = np.load(fn); ax[1].plot(geo[:, 0], geo[:, 1], 'b-', lw=1.2); a0 = geo[0]; ts = np.linspace(0, 40, 400)
+    ax[1].plot(a0[0]*np.exp(-0.25*ts), a0[1]*np.exp(-0.375*ts), 'r--', lw=1)
+ax[1].plot([], [], 'b-', label='geodesic'); ax[1].plot([], [], 'r--', label='linearized flow')
+ax[1].set_xlabel('$a_4$'); ax[1].set_ylabel('$a_6$'); ax[1].legend(); ax[1].set_xlim(-0.01, 0.36); ax[1].set_ylim(-0.01, 0.25)
+plt.tight_layout(); plt.savefig(OUT+'fig_curv.png'); plt.close()
+# fig_inel
+M = json.load(open('../data/models_results.json'))['inelastic']; beta = json.load(open('../data/models_results.json'))['beta_p1']
+ts = np.array(M['t']); en = np.array(M['energy'])
+V = np.arange(-7.0, 7.0 + 1e-9, 0.07); ff = np.load('../data/f_inel_final.npy'); s = np.sqrt(0.07*np.sum(V**2*ff))
+fig, ax = plt.subplots(1, 3, figsize=(10, 3))
+ax[0].semilogy(ts, en, label='numerical'); ax[0].semilogy(ts, np.exp(-(1-beta)*ts), 'k--', label=r'$e^{-\lambda(1-\langle\beta\rangle)t}$'); ax[0].set_xlabel('$t$'); ax[0].set_ylabel(r'$\langle v^2\rangle$'); ax[0].legend()
+ax[1].plot(ts, M['kurtosis']); ax[1].axhline(3, color='k', ls=':'); ax[1].set_xlabel('$t$'); ax[1].set_ylabel(r'$\langle v^4\rangle/\langle v^2\rangle^2$')
+ax[2].semilogy(V/s, ff*s, label=f'profile at $t={ts[-1]:.0f}$'); ax[2].semilogy(V, np.exp(-V**2/2)/np.sqrt(2*np.pi), 'k--', label='Gaussian')
+ax[2].set_xlim(-6, 6); ax[2].set_ylim(1e-6, 1); ax[2].set_xlabel(r'$v/\sqrt{\langle v^2\rangle}$'); ax[2].legend()
+plt.tight_layout(); plt.savefig(OUT+'fig_inel.png'); plt.close()
+# fig_A5
+A2 = json.load(open('../data/closeA2.json')); B = json.load(open('../data/closeA.json')); C = json.load(open('../data/cbeta.json'))
+fig, ax = plt.subplots(1, 4, figsize=(13, 3.1))
+rr = np.array(A2['div']['rows']); eps = rr[:, 0]
+ax[0].loglog(eps, rr[:, 2], 'o-', label=r'$\kappa_{\rm eff}$ (numerical)'); ax[0].loglog(eps, rr[:, 3], 'k--', label=r'asymptotics $\lambda\alpha D_1/(32\sqrt{\varepsilon}\,D)$')
+ax[0].set_xlabel(r'$\varepsilon=1/3-\alpha$'); ax[0].legend(fontsize=8)
+x = np.linspace(0, 6, 300)
+for m, ls in ((2, '--'), (3, '-'), (4, ':')):
+    cs = B['series'][str(m)]; Psi = sum(cs[j]*(-0.5)**(j//2)*x**j for j in range(0, len(cs), 2)); ax[1].plot(x, Psi, ls, label=f'$m={m}$')
+ax[1].set_xlabel(r'$x=\alpha k^2$'); ax[1].set_ylabel(r'$\Psi_m(x)$, $c_2=-1/2$'); ax[1].set_ylim(-3, 1.2); ax[1].legend()
+sg = np.array([float(k) for k in B['grazing']]); rd = np.array([B['grazing'][k]-1 for k in B['grazing']])
+ax[2].loglog(sg, rd, 'o-', label='$R_D-1$'); ax[2].loglog(sg, rd[-1]*(sg/sg[-1])**2, 'k:', label=r'$\propto\sigma_\theta^2$'); ax[2].set_xlabel(r'kernel width $\sigma_\theta$'); ax[2].legend()
+bs = sorted(C, key=float); ax[3].plot([float(b) for b in bs], [C[b]['c'] for b in bs], 'o-'); ax[3].axhline(3*np.sqrt(6), color='k', ls=':', label=r'$3\sqrt{6}$ (Maxwell)')
+ax[3].set_xlabel(r'$\beta$ in $|v-v_*|^\beta$'); ax[3].set_ylabel(r'$c_\beta$'); ax[3].legend()
+plt.tight_layout(); plt.savefig(OUT+'fig_A5.png'); plt.close()
+print('all six figures regenerated')

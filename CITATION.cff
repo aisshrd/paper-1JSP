@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated paper and this repository."
+title: "kac-geometry: large-deviation geometry of Kac-type kinetic models"
+authors:
+  - family-names: Tazhimov
+    given-names: T. A.
+    affiliation: "Kazan National Research Technical University named after A. N. Tupolev - KAI"
+  - family-names: Sharden
+    given-names: A. R.
+    affiliation: "Kazan National Research Technical University named after A. N. Tupolev - KAI"
+  - family-names: Zheltukhin
+    given-names: V. S.
+    affiliation: "Kazan National Research Technical University named after A. N. Tupolev - KAI"
+version: 1.0.0
+date-released: 2026-10-05
+license: MIT
